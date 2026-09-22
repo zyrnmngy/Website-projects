@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VisionAR - Premium Eyewear Collection</title>
+    <style>
+         /* Loading Overlay Styles */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 1;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+
+        .loading-overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        /* Main Glasses Loading Animation */
+        .glasses-loader {
+            position: relative;
+            width: 120px;
+            height: 60px;
+        }
+
+        .glasses-frame {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            stroke: #0f766e;
+            stroke-width: 3;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .lens-left, .lens-right {
+            stroke-dasharray: 100;
+            stroke-dashoffset: 100;
+            animation: drawLens 2s ease-in-out infinite;
+        }
+
+        .lens-right {
+            animation-delay: 0.3s;
+        }
+
+        .bridge {
+            stroke-dasharray: 20;
+            stroke-dashoffset: 20;
+            animation: drawBridge 1.5s ease-in-out infinite;
+            animation-delay: 0.6s;
+        }
+
+        .temple-left, .temple-right {
+            stroke-dasharray: 40;
+            stroke-dashoffset: 40;
+            animation: drawTemple 1.8s ease-in-out infinite;
+        }
+
+        .temple-right {
+            animation-delay: 0.9s;
+        }
+
+        @keyframes drawLens {
+            0%, 20% {
+                stroke-dashoffset: 100;
+                stroke: #0f766e;
+            }
+            50% {
+                stroke-dashoffset: 0;
+                stroke: #0891b2;
+            }
+            80%, 100% {
+                stroke-dashoffset: 100;
+                stroke: #0f766e;
+            }
+        }
+
+        @keyframes drawBridge {
+            0%, 30% {
+                stroke-dashoffset: 20;
+            }
+            60% {
+                stroke-dashoffset: 0;
+            }
+            90%, 100% {
+                stroke-dashoffset: 20;
+            }
+        }
+
+        @keyframes drawTemple {
+            0%, 40% {
+                stroke-dashoffset: 40;
+            }
+            70% {
+                stroke-dashoffset: 0;
+            }
+            100% {
+                stroke-dashoffset: 40;
+            }
+        }
+
+        /* Loading Text */
+        .loading-text {
+            position: absolute;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #0f766e;
+            font-size: 1.2rem;
+            font-weight: 600;
+            text-align: center;
+            min-width: 200px;
+        }
+
+        .loading-dots {
+            display: inline-block;
+            width: 20px;
+        }
+
+        .loading-dots::after {
+            content: '';
+            animation: dots 1.5s infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: ''; }
+            40% { content: '.'; }
+            60% { content: '..'; }
+            80%, 100% { content: '...'; }
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            min-height: 100vh;
+            color: #1e293b;
+            line-height: 1.6;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 1rem 2rem;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 1px solid #e2e8f0;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #0f766e;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+        }
+
+        .logo::before {
+            content: "👁";
+            font-size: 1.5rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            color: #475569;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            background: #f1f5f9;
+            color: #0f766e;
+            transform: translateY(-1px);
+        }
+
+        .nav-links a.active {
+            background: linear-gradient(135deg, #0f766e, #0891b2);
+            color: white;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 6rem 2rem 2rem;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .page-header h1 {
+            font-size: 3.5rem;
+            color: #0f172a;
+            margin-bottom: 1rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #0f766e, #0891b2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .page-header p {
+            font-size: 1.2rem;
+            color: #64748b;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .filters-section {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .filter-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            color: #374151;
+            font-size: 0.9rem;
+        }
+
+        .filter-select {
+            padding: 0.5rem 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            background: white;
+            font-size: 0.9rem;
+            min-width: 150px;
+            transition: all 0.3s ease;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: #0f766e;
+            box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.1);
+        }
+
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .product-card {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .product-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
+        }
+
+        .product-image {
+            position: relative;
+            height: 250px;
+            background: #f8fafc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .product-image img {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+            transition: transform 0.3s ease;
+        }
+
+        .product-card:hover .product-image img {
+            transform: scale(1.05);
+        }
+
+        .brand-logo {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: white;
+            padding: 0.3rem 0.6rem;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #0f766e;
+        }
+
+        .wishlist-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .wishlist-btn:hover {
+            background: #f8fafc;
+            border-color: #0f766e;
+            color: #0f766e;
+        }
+
+        .wishlist-btn.active {
+            background: #0f766e;
+            border-color: #0f766e;
+            color: white;
+        }
+
+        .product-info {
+            padding: 1.5rem;
+        }
+
+        .product-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #0f172a;
+            margin-bottom: 0.5rem;
+            line-height: 1.3;
+        }
+
+        .product-stats {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .sold-count {
+            font-size: 0.9rem;
+            color: #64748b;
+        }
+
+        .rating {
+            display: flex;
+            gap: 2px;
+        }
+
+        .star {
+            width: 14px;
+            height: 14px;
+            background: #e2e8f0;
+            border-radius: 2px;
+            transition: background 0.3s ease;
+        }
+
+        .star.filled {
+            background: #fbbf24;
+        }
+
+        .product-price {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #0f766e;
+            margin-bottom: 1rem;
+        }
+
+        .product-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 0.7rem 1rem;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #0f766e, #0891b2);
+            color: white;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px -8px rgba(15, 118, 110, 0.5);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #0f766e;
+            border: 2px solid #0f766e;
+        }
+
+        .btn-secondary:hover {
+            background: #0f766e;
+            color: white;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 3rem 0;
+        }
+
+        .page-btn {
+            padding: 0.8rem 1.2rem;
+            border: 2px solid #e2e8f0;
+            background: white;
+            color: #64748b;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .page-btn:hover {
+            border-color: #0f766e;
+            color: #0f766e;
+        }
+
+        .page-btn.active {
+            background: #0f766e;
+            border-color: #0f766e;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .page-header h1 {
+                font-size: 2.5rem;
+            }
+            
+            .nav-links {
+                display: none;
+            }
+            
+            .container {
+                padding: 5rem 1rem 1rem;
+            }
+            
+            .filter-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .filter-group {
+                justify-content: space-between;
+            }
+            
+            .products-grid {
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                gap: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+     <!-- Loading Overlay -->
+    <div class="loading-overlay hidden" id="loadingOverlay">
+        <div class="glasses-loader">
+            <svg class="glasses-frame" viewBox="0 0 120 60">
+                <!-- Left Lens -->
+                <circle class="lens-left" cx="25" cy="30" r="18"/>
+                <!-- Right Lens -->
+                <circle class="lens-right" cx="95" cy="30" r="18"/>
+                <!-- Bridge -->
+                <line class="bridge" x1="43" y1="30" x2="77" y2="30"/>
+                <!-- Left Temple -->
+                <line class="temple-left" x1="7" y1="30" x2="0" y2="25"/>
+                <!-- Right Temple -->
+                <line class="temple-right" x1="113" y1="30" x2="120" y2="25"/>
+            </svg>
+            <div class="loading-text">
+                Loading VisionAR<span class="loading-dots"></span>
+            </div>
+        </div>
+    </div>
+    <nav class="navbar">
+        <div class="nav-content">
+            <a href="index.html" class="logo">VisionAR</a>
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="try-on.html">Virtual Try-On</a>
+                <a href="glasses.html" class="active">Shop Now</a>
+                <a href="about.html">About</a>
+                <a href="contact.html">Contact</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>Premium Eyewear Collection</h1>
+            <p>Discover our curated selection of designer frames and professional eyewear</p>
+        </div>
+
+        <div class="filters-section">
+            <div class="filter-controls">
+                <div class="filter-group">
+                    <label for="sortBy">Sort By:</label>
+                    <select id="sortBy" class="filter-select">
+                        <option value="default">Default sorting</option>
+                        <option value="price-low">Price: Low to High</option>
+                        <option value="price-high">Price: High to Low</option>
+                        <option value="popularity">Most Popular</option>
+                        <option value="newest">Newest First</option>
+                        <option value="rating">Highest Rated</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="show">Show:</label>
+                    <select id="show" class="filter-select">
+                        <option value="12">12</option>
+                        <option value="24">24</option>
+                        <option value="36">36</option>
+                        <option value="48">48</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="products-grid" id="productsGrid">
+            <!-- Products will be dynamically populated -->
+        </div>
+
+        <div class="pagination">
+            <button class="page-btn" onclick="changePage('prev')">← Previous</button>
+            <button class="page-btn active">1</button>
+            <button class="page-btn">2</button>
+            <button class="page-btn">3</button>
+            <button class="page-btn" onclick="changePage('next')">Next →</button>
+        </div>
+    </div>
+
+    <script>
+        // Main loading system
+        function showLoader() {
+            const overlay = document.getElementById('loadingOverlay');
+            overlay.style.display = 'flex';
+            setTimeout(() => {
+                overlay.classList.remove('hidden');
+            }, 10);
+        }
+
+        function hideLoader() {
+            const overlay = document.getElementById('loadingOverlay');
+            overlay.classList.add('hidden');
+            setTimeout(() => {
+                overlay.style.display = 'none';
+            }, 500);
+        }
+
+        // Add loading animation to all navigation links
+        document.querySelectorAll('.nav-links a, .cta-buttons a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                // Only trigger for actual navigation (not the current page)
+                if (this.getAttribute('href') && !this.classList.contains('active')) {
+                    e.preventDefault();
+                    showLoader();
+                    
+                    // Simulate page loading (in a real site, this would be the actual page load)
+                    setTimeout(() => {
+                        
+                        
+                        // Hide loader after content is "loaded"
+                        setTimeout(hideLoader, 500);
+                    }, 1500);
+                }
+            });
+        });
+
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('.nav-links a, .cta-buttons a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                const href = this.getAttribute('href');
+                
+                // Only show loading for actual navigation (not current page or anchors)
+                if (href && href !== '#' && !this.classList.contains('active')) {
+                    // Show loading animation
+                    showLoader();
+                    
+                    // Allow normal navigation to proceed after short delay
+                    setTimeout(() => {
+                        window.location.href = href;
+                    }, 1500);
+                }
+            });
+        });
+        class GlassesCatalog {
+            constructor() {
+                this.products = [
+                    {
+                        id: 1,
+                        name: "NEW BALANCE NB...",
+                        brand: "VisionAR",
+                        price: 4995.00,
+                        originalPrice: null,
+                        soldCount: 9,
+                        rating: 0,
+                        image: "img/frameone.png",
+                        category: "eyeglasses"
+                    },
+                    {
+                        id: 2,
+                        name: "SAINT LAURENT SL...",
+                        brand: "VisionAR",
+                        price: 27595.00,
+                        originalPrice: null,
+                        soldCount: 3,
+                        rating: 0,
+                        image: "img/frametwo.png",
+                        category: "eyeglasses"
+                    },
+                    {
+                        id: 3,
+                        name: "SAINT LAURENT SL...",
+                        brand: "VisionAR",
+                        price: 25595.00,
+                        originalPrice: null,
+                        soldCount: 3,
+                        rating: 0,
+                        image: "img/framethree.png",
+                        category: "eyeglasses"
+                    },
+                    {
+                        id: 4,
+                        name: "Swiss Eye LR25102...",
+                        brand: "VisionAR",
+                        price: 2995.00,
+                        originalPrice: null,
+                        soldCount: 5,
+                        rating: 0,
+                        image: "img/framefour.png",
+                        category: "eyeglasses"
+                    },
+                    {
+                        id: 5,
+                        name: "Premium Aviator",
+                        brand: "VisionAR",
+                        price: 9500.00,
+                        originalPrice: null,
+                        soldCount: 12,
+                        rating: 4,
+                        image: "img/frameseven.png",
+                        category: "sunglasses"
+                    },
+                    {
+                        id: 6,
+                        name: "Classic Wayfarer",
+                        brand: "VisionAR",
+                        price: 8800.00,
+                        originalPrice: null,
+                        soldCount: 8,
+                        rating: 5,
+                        image: "img/frameeight.png",
+                        category: "sunglasses"
+                    },
+                    {
+                        id: 7,
+                        name: "Designer Cat Eye Sun",
+                        brand: "VisionAR",
+                        price: 10200.00,
+                        originalPrice: null,
+                        soldCount: 6,
+                        rating: 4,
+                        image: "img/framenine.png",
+                        category: "sunglasses"
+                    },
+                    {
+                        id: 8,
+                        name: "Round Premium",
+                        brand: "VisionAR",
+                        price: 7800.00,
+                        originalPrice: null,
+                        soldCount: 15,
+                        rating: 5,
+                        image: "img/frameten.png",
+                        category: "sunglasses"
+                    },
+                    {
+                        id: 9,
+                        name: "Sport Performance",
+                        brand: "VisionAR",
+                        price: 12500.00,
+                        originalPrice: null,
+                        soldCount: 4,
+                        rating: 4,
+                        image: "img/frameeleven.png",
+                        category: "sunglasses"
+                    },
+                    {
+                        id: 10,
+                        name: "Oversized Luxury",
+                        brand: "VisionAR",
+                        price: 11800.00,
+                        originalPrice: null,
+                        soldCount: 7,
+                        rating: 5,
+                        image: "img/frametwelve.png",
+                        category: "sunglasses"
+                    },
+                    {
+                        id: 11,
+                        name: "Executive Collection",
+                        brand: "VisionAR",
+                        price: 15500.00,
+                        originalPrice: null,
+                        soldCount: 2,
+                        rating: 5,
+                        image: "img/framefive.png",
+                        category: "eyeglasses"
+                    },
+                    {
+                        id: 12,
+                        name: "Professional Series",
+                        brand: "VisionAR",
+                        price: 8900.00,
+                        originalPrice: null,
+                        soldCount: 11,
+                        rating: 4,
+                        image: "img/framesix.png",
+                        category: "eyeglasses"
+                    }
+                ];
+
+                this.currentPage = 1;
+                this.itemsPerPage = 12;
+                this.sortBy = 'default';
+                this.wishlist = [];
+
+                this.init();
+            }
+
+            init() {
+                this.renderProducts();
+                this.setupEventListeners();
+            }
+
+            setupEventListeners() {
+                document.getElementById('sortBy').addEventListener('change', (e) => {
+                    this.sortBy = e.target.value;
+                    this.renderProducts();
+                });
+
+                document.getElementById('show').addEventListener('change', (e) => {
+                    this.itemsPerPage = parseInt(e.target.value);
+                    this.currentPage = 1;
+                    this.renderProducts();
+                });
+            }
+
+            sortProducts(products) {
+                const sorted = [...products];
+                
+                switch(this.sortBy) {
+                    case 'price-low':
+                        return sorted.sort((a, b) => a.price - b.price);
+                    case 'price-high':
+                        return sorted.sort((a, b) => b.price - a.price);
+                    case 'popularity':
+                        return sorted.sort((a, b) => b.soldCount - a.soldCount);
+                    case 'rating':
+                        return sorted.sort((a, b) => b.rating - a.rating);
+                    case 'newest':
+                        return sorted.sort((a, b) => b.id - a.id);
+                    default:
+                        return sorted;
+                }
+            }
+
+            renderProducts() {
+                const sortedProducts = this.sortProducts(this.products);
+                const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+                const endIndex = startIndex + this.itemsPerPage;
+                const currentProducts = sortedProducts.slice(startIndex, endIndex);
+
+                const grid = document.getElementById('productsGrid');
+                grid.innerHTML = '';
+
+                currentProducts.forEach(product => {
+                    const productCard = this.createProductCard(product);
+                    grid.appendChild(productCard);
+                });
+            }
+
+            createProductCard(product) {
+                const card = document.createElement('div');
+                card.className = 'product-card';
+                
+                const isWishlisted = this.wishlist.includes(product.id);
+                
+                card.innerHTML = `
+                    <div class="product-image">
+                        <div class="brand-logo">${product.brand}</div>
+                        <button class="wishlist-btn ${isWishlisted ? 'active' : ''}" onclick="catalog.toggleWishlist(${product.id})">
+                            ♡
+                        </button>
+                        <img src="${product.image}" alt="${product.name}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDIwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNmOGZhZmMiLz48cGF0aCBkPSJNNTAgNDBINzBWNjBINTBWNDBaTTEzMCA0MEgxNTBWNjBIMTMwVjQwWiIgZmlsbD0iIzJhMmEyYSIvPjxwYXRoIGQ9Ik03MCA1MEg5MFY1Mkg3MFY1MFoiIGZpbGw9IiMyYTJhMmEiLz48dGV4dCB4PSIxMDAiIHk9IjgwIiBmaWxsPSIjNjQ3NDhiIiBmb250LXNpemU9IjEyIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4='" />
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-name">${product.name}</h3>
+                        <div class="product-stats">
+                            <span class="sold-count">${product.soldCount} Sold</span>
+                            <div class="rating">
+                                ${this.renderStars(product.rating)}
+                            </div>
+                        </div>
+                        <div class="product-price">₱${product.price.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</div>
+                        <div class="product-actions">
+                            <a href="try-on.html" class="btn btn-primary">Try On</a>
+                            <button class="btn btn-secondary" onclick="catalog.addToCart(${product.id})">Add to Cart</button>
+                        </div>
+                    </div>
+                `;
+
+                return card;
+            }
+
+            renderStars(rating) {
+                let stars = '';
+                for (let i = 1; i <= 5; i++) {
+                    stars += `<div class="star ${i <= rating ? 'filled' : ''}"></div>`;
+                }
+                return stars;
+            }
+
+            toggleWishlist(productId) {
+                const index = this.wishlist.indexOf(productId);
+                if (index > -1) {
+                    this.wishlist.splice(index, 1);
+                } else {
+                    this.wishlist.push(productId);
+                }
+                this.renderProducts();
+            }
+
+            addToCart(productId) {
+                const product = this.products.find(p => p.id === productId);
+                if (product) {
+                    // Add visual feedback
+                    const btn = event.target;
+                    const originalText = btn.textContent;
+                    btn.textContent = 'Added!';
+                    btn.style.background = 'linear-gradient(135deg, #059669, #0891b2)';
+                    
+                    setTimeout(() => {
+                        btn.textContent = originalText;
+                        btn.style.background = '';
+                    }, 1500);
+                    
+                    // In a real app, you'd add to cart logic here
+                    console.log(`Added ${product.name} to cart`);
+                }
+            }
+        }
+
+        // Global functions for pagination
+        function changePage(direction) {
+            if (direction === 'prev' && catalog.currentPage > 1) {
+                catalog.currentPage--;
+            } else if (direction === 'next') {
+                catalog.currentPage++;
+            }
+            catalog.renderProducts();
+            
+            // Update pagination buttons
+            document.querySelectorAll('.page-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelectorAll('.page-btn')[catalog.currentPage].classList.add('active');
+        }
+
+        // Initialize catalog
+        let catalog;
+        document.addEventListener('DOMContentLoaded', () => {
+            catalog = new GlassesCatalog();
+        });
+
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VisionAR - Virtual Try-On</title>
+    <style>
+         /* Loading Overlay Styles */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 1;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+
+        .loading-overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        /* Main Glasses Loading Animation */
+        .glasses-loader {
+            position: relative;
+            width: 120px;
+            height: 60px;
+        }
+
+        .glasses-frame {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            stroke: #0f766e;
+            stroke-width: 3;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .lens-left, .lens-right {
+            stroke-dasharray: 100;
+            stroke-dashoffset: 100;
+            animation: drawLens 2s ease-in-out infinite;
+        }
+
+        .lens-right {
+            animation-delay: 0.3s;
+        }
+
+        .bridge {
+            stroke-dasharray: 20;
+            stroke-dashoffset: 20;
+            animation: drawBridge 1.5s ease-in-out infinite;
+            animation-delay: 0.6s;
+        }
+
+        .temple-left, .temple-right {
+            stroke-dasharray: 40;
+            stroke-dashoffset: 40;
+            animation: drawTemple 1.8s ease-in-out infinite;
+        }
+
+        .temple-right {
+            animation-delay: 0.9s;
+        }
+
+        @keyframes drawLens {
+            0%, 20% {
+                stroke-dashoffset: 100;
+                stroke: #0f766e;
+            }
+            50% {
+                stroke-dashoffset: 0;
+                stroke: #0891b2;
+            }
+            80%, 100% {
+                stroke-dashoffset: 100;
+                stroke: #0f766e;
+            }
+        }
+
+        @keyframes drawBridge {
+            0%, 30% {
+                stroke-dashoffset: 20;
+            }
+            60% {
+                stroke-dashoffset: 0;
+            }
+            90%, 100% {
+                stroke-dashoffset: 20;
+            }
+        }
+
+        @keyframes drawTemple {
+            0%, 40% {
+                stroke-dashoffset: 40;
+            }
+            70% {
+                stroke-dashoffset: 0;
+            }
+            100% {
+                stroke-dashoffset: 40;
+            }
+        }
+
+        /* Loading Text */
+        .loading-text {
+            position: absolute;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #0f766e;
+            font-size: 1.2rem;
+            font-weight: 600;
+            text-align: center;
+            min-width: 200px;
+        }
+
+        .loading-dots {
+            display: inline-block;
+            width: 20px;
+        }
+
+        .loading-dots::after {
+            content: '';
+            animation: dots 1.5s infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: ''; }
+            40% { content: '.'; }
+            60% { content: '..'; }
+            80%, 100% { content: '...'; }
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            min-height: 100vh;
+            color: #1e293b;
+            line-height: 1.6;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 1rem 2rem;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 1px solid #e2e8f0;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #0f766e;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+        }
+
+        .logo::before {
+            content: "👁";
+            font-size: 1.5rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            color: #475569;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            background: #f1f5f9;
+            color: #0f766e;
+            transform: translateY(-1px);
+        }
+
+        .nav-links a.active {
+            background: linear-gradient(135deg, #0f766e, #0891b2);
+            color: white;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 6rem 2rem 2rem;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .page-header h1 {
+            font-size: 3.5rem;
+            color: #0f172a;
+            margin-bottom: 1rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #0f766e, #0891b2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .page-header p {
+            font-size: 1.2rem;
+            color: #64748b;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .try-on-section {
+            background: white;
+            border-radius: 20px;
+            padding: 3rem;
+            margin-bottom: 4rem;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-size: 2.5rem;
+            color: #0f172a;
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+
+        .section-subtitle {
+            font-size: 1.2rem;
+            color: #64748b;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .camera-container {
+            position: relative;
+            max-width: 600px;
+            margin: 0 auto;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+        }
+
+        #video {
+            width: 100%;
+            height: auto;
+            display: block;
+            transform: scaleX(-1);
+        }
+
+        .glasses-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: auto;
+            opacity: 0.9;
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+
+        .contact-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 280px;
+            height: 200px;
+            pointer-events: none;
+            opacity: 0.8;
+        }
+
+        .contact-lens {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 2px solid rgba(15, 118, 110, 0.3);
+            background: radial-gradient(circle at 30% 30%, rgba(15, 118, 110, 0.2), transparent 60%);
+            mix-blend-mode: multiply;
+        }
+
+        .left-eye {
+            top: 45%;
+            left: 20%;
+        }
+
+        .right-eye {
+            top: 45%;
+            right: 20%;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin: 2rem 0;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #0f766e, #0891b2);
+            color: white;
+            border: none;
+            padding: 0.8rem 2rem;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px -1px rgba(15, 118, 110, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px -8px rgba(15, 118, 110, 0.5);
+        }
+
+        .btn.secondary {
+            background: white;
+            color: #0f766e;
+            border: 2px solid #0f766e;
+        }
+
+        .btn.secondary:hover {
+            background: #0f766e;
+            color: white;
+        }
+
+        .product-categories {
+            margin: 2rem 0;
+        }
+
+        .category-nav {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .category-btn {
+            background: white;
+            color: #0f766e;
+            border: 2px solid #0f766e;
+            padding: 0.8rem 2rem;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .category-btn:hover {
+            background: #f0fdfa;
+            transform: translateY(-2px);
+        }
+
+        .category-btn.active {
+            background: linear-gradient(135deg, #0f766e, #0891b2);
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 4px 6px -1px rgba(15, 118, 110, 0.3);
+        }
+
+        .category-btn.active:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px -8px rgba(15, 118, 110, 0.5);
+        }
+
+        .glasses-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .glasses-item {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid #e2e8f0;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .glasses-item:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.15);
+            border-color: #0f766e;
+        }
+
+        .glasses-item.selected {
+            border-color: #0f766e;
+            background: linear-gradient(135deg, #f0fdfa, #ecfdf5);
+            transform: translateY(-2px);
+        }
+
+        .glasses-item img {
+            width: 120px;
+            height: auto;
+            margin-bottom: 1rem;
+            max-height: 50px;
+            object-fit: contain;
+        }
+
+        .glasses-item h4 {
+            color: #0f172a;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .glasses-item p {
+            color: #0f766e;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .status {
+            text-align: center;
+            margin: 1rem 0;
+            color: #64748b;
+            font-size: 1.1rem;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #e2e8f0;
+            border-radius: 50%;
+            border-top-color: #0f766e;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error {
+            color: #dc2626;
+            background: #fee2e2;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            border: 1px solid #fecaca;
+        }
+
+        .trust-indicators {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin: 3rem 0;
+            flex-wrap: wrap;
+        }
+
+        .trust-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.8rem 1.5rem;
+            background: white;
+            border-radius: 50px;
+            border: 1px solid #e2e8f0;
+            color: #64748b;
+            font-weight: 500;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin: 4rem 0;
+        }
+
+        .feature-card {
+            background: white;
+            border-radius: 16px;
+            padding: 2.5rem;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
+        }
+
+        .feature-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #0f766e, #0891b2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            font-size: 2rem;
+        }
+
+        .feature-card h3 {
+            color: #0f172a;
+            margin-bottom: 1rem;
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+
+        .feature-card p {
+            color: #64748b;
+            line-height: 1.7;
+            font-size: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .page-header h1 {
+                font-size: 2.5rem;
+            }
+            
+            .nav-links {
+                display: none;
+            }
+            
+            .container {
+                padding: 5rem 1rem 1rem;
+            }
+            
+            .try-on-section {
+                padding: 2rem 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay hidden" id="loadingOverlay">
+        <div class="glasses-loader">
+            <svg class="glasses-frame" viewBox="0 0 120 60">
+                <!-- Left Lens -->
+                <circle class="lens-left" cx="25" cy="30" r="18"/>
+                <!-- Right Lens -->
+                <circle class="lens-right" cx="95" cy="30" r="18"/>
+                <!-- Bridge -->
+                <line class="bridge" x1="43" y1="30" x2="77" y2="30"/>
+                <!-- Left Temple -->
+                <line class="temple-left" x1="7" y1="30" x2="0" y2="25"/>
+                <!-- Right Temple -->
+                <line class="temple-right" x1="113" y1="30" x2="120" y2="25"/>
+            </svg>
+            <div class="loading-text">
+                Loading VisionAR<span class="loading-dots"></span>
+            </div>
+        </div>
+    </div>
+    <nav class="navbar">
+        <div class="nav-content">
+            <a href="index.html" class="logo">VisionAR</a>
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="try-on.html" class="active">Virtual Try-On</a>
+                <a href="glasses.html">Shop Now</a>
+                <a href="about.html">About</a>
+                <a href="contact.html">Contact</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>Virtual Try-On Experience</h1>
+            <p>Experience precision eyewear fitting with our revolutionary AR technology</p>
+        </div>
+
+        <div class="trust-indicators">
+            <div class="trust-badge">
+                <span>✓</span> FDA Approved Process
+            </div>
+            <div class="trust-badge">
+                <span>✓</span> Optometrist Validated
+            </div>
+            <div class="trust-badge">
+                <span>✓</span> 99.2% Accuracy Rate
+            </div>
+        </div>
+
+        <div class="try-on-section">
+            <div class="section-header">
+                <h2 class="section-title">Advanced AR Fitting System</h2>
+                <p class="section-subtitle">
+                    Professional-grade virtual try-on technology with real-time face tracking
+                </p>
+            </div>
+            
+            <div id="status" class="status">
+                <div class="loading"></div> Initializing professional AR system...
+            </div>
+            
+            <div class="camera-container" id="cameraContainer" style="display: none;">
+                <video id="video" autoplay muted playsinline></video>
+                <img id="glassesOverlay" class="glasses-overlay" src="" alt="Virtual Glasses" style="display: none;">
+                <div id="contactOverlay" class="contact-overlay" style="display: none;">
+                    <div class="contact-lens left-eye"></div>
+                    <div class="contact-lens right-eye"></div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button id="startCamera" class="btn">Start Professional Fitting</button>
+                <button id="stopCamera" class="btn secondary" style="display: none;">Stop Camera</button>
+                <button id="capturePhoto" class="btn secondary" style="display: none;">Capture Fitting</button>
+                <button id="uploadGlasses" class="btn secondary">Upload Custom Frame</button>
+                <input type="file" id="glassesInput" accept="image/*" style="display: none;">
+            </div>
+
+            <div class="product-categories">
+                <div class="category-nav">
+                    <button class="category-btn active" data-category="eyeglasses">Professional Eyeglasses</button>
+                    <button class="category-btn" data-category="sunglasses">Premium Sunglasses</button>
+                </div>
+                
+                <!-- Eyeglasses Gallery -->
+                <div class="glasses-gallery" id="eyeglasses-gallery">
+                    <div class="glasses-item selected" data-glasses="classic">
+                        <img src="img/frameone.png" style="border-radius: 8px;" alt="Professional Square Frame">
+                        <h4>Professional Square</h4>
+                        <p>₱5,488.00</p>
+                    </div>
+                    <div class="glasses-item" data-glasses="aviator-clear">
+                        <img src="img/frametwo.png" style="border-radius: 8px;" alt="Executive Round Frame">
+                        <h4>Executive Round</h4>
+                        <p>₱6,799.00</p>
+                    </div>
+                    <div class="glasses-item" data-glasses="round">
+                        <img src="img/framethree.png" style="border-radius: 8px;" alt="Designer Cat Eye">
+                        <h4>Designer Cat Eye</h4>
+                        <p>₱6,580.00</p>
+                    </div>
+                    <div class="glasses-item" data-glasses="cat-eye">
+                        <img src="img/framefour.png" style="border-radius: 8px;" alt="Modern Rectangle">
+                        <h4>Modern Rectangle</h4>
+                        <p>₱7,660.00</p>
+                    </div>
+                    <div class="glasses-item" data-glasses="oversized">
+                        <img src="img/framefive.png" style="border-radius: 8px;" alt="Oversized Professional">
+                        <h4>Oversized Professional</h4>
+                        <p>₱8,200.00</p>
+                    </div>
+                    <div class="glasses-item" data-glasses="vintage">
+                        <img src="img/framesix.png" style="border-radius: 8px;" alt="Vintage Executive">
+                        <h4>Vintage Executive</h4>
+                        <p>₱7,950.00</p>
+                    </div>
+                </div>
+                
+                <!-- Sunglasses Gallery -->
+                <div class="glasses-gallery" id="sunglasses-gallery" style="display: none;">
+                    <div class="glasses-item" data-glasses="aviator-sun">
+                        <img src="img/frameseven.png" style="border-radius: 8px;" alt="Premium Aviator">
+                        <h4>Premium Aviator</h4>
+                        <p>₱9,500.00</p>
+                    </div>
+                    <div class="glasses-item" data-glasses="wayfarer">
+                        <img src="img/frameeight.png" style="border-radius: 8px;" alt="Classic Wayfarer">
+                        <h4>Classic Wayfarer</h4>
+                        <p>₱8,800.00</p>
+                    </div>
+                    <div class="glasses-item" data-glasses="cat-eye-sun">
+                        <img src="img/framenine.png" style="border-radius: 8px;" alt="Designer Cat Eye Sun">
+                        <h4>Designer Cat Eye Sun</h4>
+                        <p>₱10,200.00</p>
+                    </div>
+                    <div class="glasses-item" data-glasses="round-sun">
+                        <img src="img/frameten.png" style="border-radius: 8px;" alt="Round Premium">
+                        <h4>Round Premium</h4>
+                        <p>₱7,800.00</p>
+                    </div>
+                    <div class="glasses-item" data-glasses="sport-sun">
+                        <img src="img/frameeleven.png" style="border-radius: 8px;" alt="Sport Performance">
+                        <h4>Sport Performance</h4>
+                        <p>₱12,500.00</p>
+                    </div>
+                    <div class="glasses-item" data-glasses="oversized-sun">
+                        <img src="img/frametwelve.png" style="border-radius: 8px;" alt="Oversized Luxury">
+                        <h4>Oversized Luxury</h4>
+                        <p>₱11,800.00</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="features">
+            <div class="feature-card">
+                <div class="feature-icon">🔬</div>
+                <h3>Clinical Precision</h3>
+                <p>Advanced AR technology with medical-grade accuracy for precise facial mapping and professional frame fitting validation.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h3>Real-Time Analysis</h3>
+                <p>Instant fitting analysis with professional recommendations based on your unique facial characteristics and measurements.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🛡️</div>
+                <h3>Quality Assurance</h3>
+                <p>Every virtual fitting meets professional optometric standards with comprehensive accuracy validation and quality control.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class VirtualTryOn {
+            constructor() {
+                this.video = document.getElementById('video');
+                this.startBtn = document.getElementById('startCamera');
+                this.stopBtn = document.getElementById('stopCamera');
+                this.captureBtn = document.getElementById('capturePhoto');
+                this.status = document.getElementById('status');
+                this.cameraContainer = document.getElementById('cameraContainer');
+                this.glassesOverlay = document.getElementById('glassesOverlay');
+                this.contactOverlay = document.getElementById('contactOverlay');
+                this.glassesItems = document.querySelectorAll('.glasses-item');
+                this.categoryBtns = document.querySelectorAll('.category-btn');
+                
+                this.stream = null;
+                this.selectedGlasses = 'classic';
+                this.activeCategory = 'eyeglasses';
+                this.uploadedImages = {};
+                
+                this.init();
+            }
+
+            init() {
+                this.startBtn.addEventListener('click', () => this.startCamera());
+                this.stopBtn.addEventListener('click', () => this.stopCamera());
+                this.captureBtn.addEventListener('click', () => this.capturePhoto());
+                
+                const uploadBtn = document.getElementById('uploadGlasses');
+                const fileInput = document.getElementById('glassesInput');
+                
+                uploadBtn.addEventListener('click', () => fileInput.click());
+                fileInput.addEventListener('change', (e) => this.handleImageUpload(e));
+                
+                // Category switching
+                this.categoryBtns.forEach(btn => {
+                    btn.addEventListener('click', (e) => this.switchCategory(e.target.dataset.category));
+                });
+                
+                // Initial glasses selection
+                this.updateGlassesItems();
+                this.updateOverlay();
+            }
+
+            switchCategory(category) {
+                this.activeCategory = category;
+                
+                // Update active button
+                this.categoryBtns.forEach(btn => btn.classList.remove('active'));
+                document.querySelector(`[data-category="${category}"]`).classList.add('active');
+                
+                // Show/hide galleries
+                document.getElementById('eyeglasses-gallery').style.display = category === 'eyeglasses' ? 'grid' : 'none';
+                document.getElementById('sunglasses-gallery').style.display = category === 'sunglasses' ? 'grid' : 'none';
+                
+                // Update glasses items selection
+                this.updateGlassesItems();
+                
+                // Select first item in new category
+                const firstItem = document.querySelector(`#${category}-gallery .glasses-item`);
+                if (firstItem) {
+                    this.selectGlasses(firstItem);
+                }
+            }
+
+            updateGlassesItems() {
+                this.glassesItems = document.querySelectorAll('.glasses-item');
+                this.glassesItems.forEach(item => {
+                    item.addEventListener('click', (e) => this.selectGlasses(e.currentTarget));
+                });
+            }
+
+            selectGlasses(item) {
+                this.glassesItems.forEach(g => g.classList.remove('selected'));
+                item.classList.add('selected');
+                this.selectedGlasses = item.dataset.glasses;
+                this.updateOverlay();
+                
+                item.style.transform = 'scale(1.05) translateY(-2px)';
+                setTimeout(() => {
+                    item.style.transform = '';
+                }, 300);
+            }
+
+            updateOverlay() {
+                if (this.uploadedImages && this.uploadedImages[this.selectedGlasses]) {
+                    this.showGlassesOverlay(this.uploadedImages[this.selectedGlasses]);
+                    return;
+                }
+                
+                const realProductImages = {
+                    classic: "img/frameone.png",
+                    'aviator-clear': "img/frametwo.png",
+                    round: "img/framethree.png",
+                    'cat-eye': "img/framefour.png",
+                    oversized: "img/framefive.png",
+                    vintage: "img/framesix.png",
+                    'aviator-sun': "img/frameseven.png",
+                    wayfarer: "img/frameeight.png",
+                    'cat-eye-sun': "img/framenine.png",
+                    'round-sun': "img/frameten.png",
+                    'sport-sun': "img/frameeleven.png",
+                    'oversized-sun': "img/frametwelve.png"
+                };
+                
+                const generatedImages = {
+                    classic: this.createGlassesDataURL('classic'),
+                    'aviator-clear': this.createGlassesDataURL('aviator'),
+                    round: this.createGlassesDataURL('round'),
+                    'cat-eye': this.createGlassesDataURL('cat-eye'),
+                    oversized: this.createGlassesDataURL('oversized'),
+                    vintage: this.createGlassesDataURL('vintage'),
+                    'aviator-sun': this.createSunglassesDataURL('aviator'),
+                    wayfarer: this.createSunglassesDataURL('wayfarer'),
+                    'cat-eye-sun': this.createSunglassesDataURL('cat-eye'),
+                    'round-sun': this.createSunglassesDataURL('round'),
+                    'sport-sun': this.createSunglassesDataURL('sport'),
+                    'oversized-sun': this.createSunglassesDataURL('oversized')
+                };
+                
+                const imageSrc = realProductImages[this.selectedGlasses] || generatedImages[this.selectedGlasses];
+                this.showGlassesOverlay(imageSrc);
+            }
+
+            showGlassesOverlay(src) {
+                this.contactOverlay.style.display = 'none';
+                this.glassesOverlay.style.display = 'block';
+                this.glassesOverlay.src = src;
+                this.glassesOverlay.style.width = '240px';
+                this.glassesOverlay.style.height = 'auto';
+                this.glassesOverlay.style.opacity = '0.9';
+            }
+
+            async startCamera() {
+                try {
+                    this.updateStatus('Initializing professional AR system...', false);
+                    
+                    const constraints = {
+                        video: {
+                            width: { ideal: 640 },
+                            height: { ideal: 480 },
+                            facingMode: 'user'
+                        },
+                        audio: false
+                    };
+
+                    this.stream = await navigator.mediaDevices.getUserMedia(constraints);
+                    this.video.srcObject = this.stream;
+                    
+                    this.video.addEventListener('loadedmetadata', () => {
+                        this.cameraContainer.style.display = 'block';
+                        this.status.style.display = 'none';
+                        this.startBtn.style.display = 'none';
+                        this.stopBtn.style.display = 'inline-block';
+                        this.captureBtn.style.display = 'inline-block';
+                        this.glassesOverlay.style.display = 'block';
+                        
+                        this.startFaceTracking();
+                    });
+
+                } catch (error) {
+                    console.error('Camera access error:', error);
+                    this.updateStatus(`System Error: ${error.message}`, true);
+                }
+            }
+
+            stopCamera() {
+                if (this.stream) {
+                    this.stream.getTracks().forEach(track => track.stop());
+                    this.stream = null;
+                }
+                
+                this.video.srcObject = null;
+                this.cameraContainer.style.display = 'none';
+                this.startBtn.style.display = 'inline-block';
+                this.stopBtn.style.display = 'none';
+                this.captureBtn.style.display = 'none';
+                this.glassesOverlay.style.display = 'none';
+                this.contactOverlay.style.display = 'none';
+                this.updateStatus('Camera system stopped. Click "Start Professional Fitting" to resume.', false);
+            }
+
+            capturePhoto() {
+                const canvas = document.createElement('canvas');
+                canvas.width = this.video.videoWidth;
+                canvas.height = this.video.videoHeight;
+                
+                const ctx = canvas.getContext('2d');
+                ctx.scale(-1, 1);
+                ctx.drawImage(this.video, -canvas.width, 0);
+                
+                const link = document.createElement('a');
+                link.download = `visionAR-professional-fitting-${Date.now()}.png`;
+                link.href = canvas.toDataURL();
+                link.click();
+                
+                // Visual feedback for capture
+                this.captureBtn.textContent = 'Captured!';
+                this.captureBtn.style.background = 'linear-gradient(135deg, #059669, #0891b2)';
+                
+                setTimeout(() => {
+                    this.captureBtn.textContent = 'Capture Fitting';
+                    this.captureBtn.style.background = '';
+                }, 1500);
+            }
+
+            handleImageUpload(event) {
+                const file = event.target.files[0];
+                if (file && file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        this.uploadedImages = this.uploadedImages || {};
+                        this.uploadedImages[this.selectedGlasses] = e.target.result;
+                        
+                        this.updateOverlay();
+                        
+                        const selectedItem = document.querySelector(`.glasses-item[data-glasses="${this.selectedGlasses}"]`);
+                        const img = selectedItem.querySelector('img');
+                        if (img) {
+                            img.src = e.target.result;
+                            img.style.objectFit = 'contain';
+                        }
+                        
+                        this.updateStatus('Professional frame uploaded successfully', false);
+                        setTimeout(() => {
+                            if (this.stream) {
+                                this.updateStatus('', false);
+                            }
+                        }, 2000);
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    this.updateStatus('Please select a valid image file', true);
+                }
+            }
+
+            startFaceTracking() {
+                let baseTop = 45;
+                let baseLeft = 50;
+                
+                const animate = () => {
+                    if (this.stream) {
+                        const offsetX = Math.sin(Date.now() * 0.001) * 2;
+                        const offsetY = Math.cos(Date.now() * 0.0015) * 1;
+                        
+                        this.glassesOverlay.style.left = `${baseLeft + offsetX}%`;
+                        this.glassesOverlay.style.top = `${baseTop + offsetY}%`;
+                        
+                        requestAnimationFrame(animate);
+                    }
+                };
+                
+                animate();
+            }
+
+            createGlassesDataURL(style) {
+                const canvas = document.createElement('canvas');
+                canvas.width = 240;
+                canvas.height = 90;
+                const ctx = canvas.getContext('2d');
+                
+                ctx.lineWidth = 2.5;
+                
+                switch (style) {
+                    case 'classic':
+                        ctx.strokeStyle = '#2a2a2a';
+                        ctx.fillStyle = 'rgba(42, 42, 42, 0.1)';
+                        
+                        this.drawRoundedRect(ctx, 25, 25, 70, 45, 8);
+                        ctx.fill();
+                        ctx.stroke();
+                        
+                        this.drawRoundedRect(ctx, 145, 25, 70, 45, 8);
+                        ctx.fill();
+                        ctx.stroke();
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(95, 42);
+                        ctx.quadraticCurveTo(120, 40, 145, 42);
+                        ctx.stroke();
+                        break;
+                        
+                    case 'aviator':
+                        ctx.strokeStyle = '#B8860B';
+                        ctx.fillStyle = 'rgba(184, 134, 11, 0.05)';
+                        ctx.lineWidth = 2;
+                        
+                        ctx.beginPath();
+                        ctx.ellipse(60, 45, 35, 30, 0, 0, 2*Math.PI);
+                        ctx.fill();
+                        ctx.stroke();
+                        
+                        ctx.beginPath();
+                        ctx.ellipse(180, 45, 35, 30, 0, 0, 2*Math.PI);
+                        ctx.fill();
+                        ctx.stroke();
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(95, 35);
+                        ctx.quadraticCurveTo(120, 32, 145, 35);
+                        ctx.stroke();
+                        break;
+                        
+                    case 'round':
+                        ctx.strokeStyle = '#2a2a2a';
+                        ctx.fillStyle = 'rgba(42, 42, 42, 0.05)';
+                        ctx.lineWidth = 2;
+                        
+                        ctx.beginPath();
+                        ctx.arc(60, 45, 32, 0, 2 * Math.PI);
+                        ctx.fill();
+                        ctx.stroke();
+                        
+                        ctx.beginPath();
+                        ctx.arc(180, 45, 32, 0, 2 * Math.PI);
+                        ctx.fill();
+                        ctx.stroke();
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(92, 45);
+                        ctx.lineTo(148, 45);
+                        ctx.stroke();
+                        break;
+                        
+                    case 'cat-eye':
+                        ctx.strokeStyle = '#2a2a2a';
+                        ctx.fillStyle = 'rgba(42, 42, 42, 0.1)';
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(30, 45);
+                        ctx.quadraticCurveTo(35, 25, 65, 30);
+                        ctx.quadraticCurveTo(90, 35, 85, 50);
+                        ctx.quadraticCurveTo(80, 65, 50, 60);
+                        ctx.quadraticCurveTo(25, 55, 30, 45);
+                        ctx.closePath();
+                        ctx.fill();
+                        ctx.stroke();
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(210, 45);
+                        ctx.quadraticCurveTo(205, 25, 175, 30);
+                        ctx.quadraticCurveTo(150, 35, 155, 50);
+                        ctx.quadraticCurveTo(160, 65, 190, 60);
+                        ctx.quadraticCurveTo(215, 55, 210, 45);
+                        ctx.closePath();
+                        ctx.fill();
+                        ctx.stroke();
+                        break;
+                        
+                    case 'oversized':
+                        ctx.strokeStyle = '#8B4513';
+                        ctx.fillStyle = 'rgba(139, 69, 19, 0.1)';
+                        
+                        this.drawRoundedRect(ctx, 15, 20, 80, 50, 10);
+                        ctx.fill();
+                        ctx.stroke();
+                        
+                        this.drawRoundedRect(ctx, 145, 20, 80, 50, 10);
+                        ctx.fill();
+                        ctx.stroke();
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(95, 42);
+                        ctx.quadraticCurveTo(120, 40, 145, 42);
+                        ctx.stroke();
+                        break;
+                        
+                    case 'vintage':
+                        ctx.strokeStyle = '#4B0082';
+                        ctx.fillStyle = 'rgba(75, 0, 130, 0.1)';
+                        ctx.lineWidth = 3;
+                        
+                        ctx.beginPath();
+                        ctx.arc(60, 45, 30, 0, 2 * Math.PI);
+                        ctx.fill();
+                        ctx.stroke();
+                        
+                        ctx.beginPath();
+                        ctx.arc(180, 45, 30, 0, 2 * Math.PI);
+                        ctx.fill();
+                        ctx.stroke();
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(90, 45);
+                        ctx.quadraticCurveTo(120, 42, 150, 45);
+                        ctx.stroke();
+                        break;
+                }
+                
+                return canvas.toDataURL();
+            }
+
+            createSunglassesDataURL(style) {
+                const canvas = document.createElement('canvas');
+                canvas.width = 240;
+                canvas.height = 90;
+                const ctx = canvas.getContext('2d');
+                
+                ctx.lineWidth = 2.5;
+                
+                switch (style) {
+                    case 'aviator':
+                        ctx.strokeStyle = '#FFD700';
+                        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                        ctx.lineWidth = 2;
+                        
+                        ctx.beginPath();
+                        ctx.ellipse(60, 45, 35, 30, 0, 0, 2*Math.PI);
+                        ctx.fill();
+                        ctx.stroke();
+                        
+                        ctx.beginPath();
+                        ctx.ellipse(180, 45, 35, 30, 0, 0, 2*Math.PI);
+                        ctx.fill();
+                        ctx.stroke();
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(95, 35);
+                        ctx.quadraticCurveTo(120, 32, 145, 35);
+                        ctx.stroke();
+                        break;
+                        
+                    case 'wayfarer':
+                        ctx.strokeStyle = '#1a1a1a';
+                        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                        
+                        this.drawRoundedRect(ctx, 25, 25, 70, 45, 8);
+                        ctx.fill();
+                        ctx.stroke();
+                        
+                        this.drawRoundedRect(ctx, 145, 25, 70, 45, 8);
+                        ctx.fill();
+                        ctx.stroke();
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(95, 42);
+                        ctx.lineTo(145, 42);
+                        ctx.stroke();
+                        break;
+                        
+                    case 'cat-eye':
+                        ctx.strokeStyle = '#FF69B4';
+                        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(30, 45);
+                        ctx.quadraticCurveTo(35, 25, 65, 30);
+                        ctx.quadraticCurveTo(90, 35, 85, 50);
+                        ctx.quadraticCurveTo(80, 65, 50, 60);
+                        ctx.quadraticCurveTo(25, 55, 30, 45);
+                        ctx.closePath();
+                        ctx.fill();
+                        ctx.stroke();
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(210, 45);
+                        ctx.quadraticCurveTo(205, 25, 175, 30);
+                        ctx.quadraticCurveTo(150, 35, 155, 50);
+                        ctx.quadraticCurveTo(160, 65, 190, 60);
+                        ctx.quadraticCurveTo(215, 55, 210, 45);
+                        ctx.closePath();
+                        ctx.fill();
+                        ctx.stroke();
+                        break;
+                        
+                    case 'round':
+                        ctx.strokeStyle = '#8B4513';
+                        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                        ctx.lineWidth = 2;
+                        
+                        ctx.beginPath();
+                        ctx.arc(60, 45, 32, 0, 2 * Math.PI);
+                        ctx.fill();
+                        ctx.stroke();
+                        
+                        ctx.beginPath();
+                        ctx.arc(180, 45, 32, 0, 2 * Math.PI);
+                        ctx.fill();
+                        ctx.stroke();
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(92, 45);
+                        ctx.lineTo(148, 45);
+                        ctx.stroke();
+                        break;
+                        
+                    case 'sport':
+                        ctx.strokeStyle = '#FF4500';
+                        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                        ctx.lineWidth = 3;
+                        
+                        ctx.beginPath();
+                        ctx.ellipse(60, 45, 40, 25, -0.1, 0, 2*Math.PI);
+                        ctx.fill();
+                        ctx.stroke();
+                        
+                        ctx.beginPath();
+                        ctx.ellipse(180, 45, 40, 25, 0.1, 0, 2*Math.PI);
+                        ctx.fill();
+                        ctx.stroke();
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(100, 40);
+                        ctx.quadraticCurveTo(120, 38, 140, 40);
+                        ctx.stroke();
+                        break;
+                        
+                    case 'oversized':
+                        ctx.strokeStyle = '#9400D3';
+                        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                        ctx.lineWidth = 2;
+                        
+                        ctx.beginPath();
+                        ctx.ellipse(60, 45, 45, 35, 0, 0, 2*Math.PI);
+                        ctx.fill();
+                        ctx.stroke();
+                        
+                        ctx.beginPath();
+                        ctx.ellipse(180, 45, 45, 35, 0, 0, 2*Math.PI);
+                        ctx.fill();
+                        ctx.stroke();
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(105, 42);
+                        ctx.quadraticCurveTo(120, 40, 135, 42);
+                        ctx.stroke();
+                        break;
+                }
+                
+                return canvas.toDataURL();
+            }
+
+            drawRoundedRect(ctx, x, y, width, height, radius) {
+                ctx.beginPath();
+                ctx.moveTo(x + radius, y);
+                ctx.lineTo(x + width - radius, y);
+                ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+                ctx.lineTo(x + width, y + height - radius);
+                ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+                ctx.lineTo(x + radius, y + height);
+                ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+                ctx.lineTo(x, y + radius);
+                ctx.quadraticCurveTo(x, y, x + radius, y);
+                ctx.closePath();
+            }
+
+            updateStatus(message, isError = false) {
+                this.status.style.display = 'block';
+                this.status.innerHTML = message;
+                if (isError) {
+                    this.status.className = 'status error';
+                } else {
+                    this.status.className = 'status';
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            new VirtualTryOn();
+        });
+        // Main loading system
+        function showLoader() {
+            const overlay = document.getElementById('loadingOverlay');
+            overlay.style.display = 'flex';
+            setTimeout(() => {
+                overlay.classList.remove('hidden');
+            }, 10);
+        }
+
+        function hideLoader() {
+            const overlay = document.getElementById('loadingOverlay');
+            overlay.classList.add('hidden');
+            setTimeout(() => {
+                overlay.style.display = 'none';
+            }, 500);
+        }
+
+        // Add loading animation to all navigation links
+        document.querySelectorAll('.nav-links a, .cta-buttons a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                // Only trigger for actual navigation (not the current page)
+                if (this.getAttribute('href') && !this.classList.contains('active')) {
+                    e.preventDefault();
+                    showLoader();
+                    
+                    // Simulate page loading (in a real site, this would be the actual page load)
+                    setTimeout(() => {
+                        
+                        
+                        // Hide loader after content is "loaded"
+                        setTimeout(hideLoader, 500);
+                    }, 1500);
+                }
+            });
+        });
+
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('.nav-links a, .cta-buttons a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                const href = this.getAttribute('href');
+                
+                // Only show loading for actual navigation (not current page or anchors)
+                if (href && href !== '#' && !this.classList.contains('active')) {
+                    // Show loading animation
+                    showLoader();
+                    
+                    // Allow normal navigation to proceed after short delay
+                    setTimeout(() => {
+                        window.location.href = href;
+                    }, 1500);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About VisionAR - Advanced Eye Care Solutions</title>
+    <style>
+        /* Loading Overlay Styles */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 1;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+
+        .loading-overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        /* Main Glasses Loading Animation */
+        .glasses-loader {
+            position: relative;
+            width: 120px;
+            height: 60px;
+        }
+
+        .glasses-frame {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            stroke: #0f766e;
+            stroke-width: 3;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .lens-left, .lens-right {
+            stroke-dasharray: 100;
+            stroke-dashoffset: 100;
+            animation: drawLens 2s ease-in-out infinite;
+        }
+
+        .lens-right {
+            animation-delay: 0.3s;
+        }
+
+        .bridge {
+            stroke-dasharray: 20;
+            stroke-dashoffset: 20;
+            animation: drawBridge 1.5s ease-in-out infinite;
+            animation-delay: 0.6s;
+        }
+
+        .temple-left, .temple-right {
+            stroke-dasharray: 40;
+            stroke-dashoffset: 40;
+            animation: drawTemple 1.8s ease-in-out infinite;
+        }
+
+        .temple-right {
+            animation-delay: 0.9s;
+        }
+
+        @keyframes drawLens {
+            0%, 20% {
+                stroke-dashoffset: 100;
+                stroke: #0f766e;
+            }
+            50% {
+                stroke-dashoffset: 0;
+                stroke: #0891b2;
+            }
+            80%, 100% {
+                stroke-dashoffset: 100;
+                stroke: #0f766e;
+            }
+        }
+
+        @keyframes drawBridge {
+            0%, 30% {
+                stroke-dashoffset: 20;
+            }
+            60% {
+                stroke-dashoffset: 0;
+            }
+            90%, 100% {
+                stroke-dashoffset: 20;
+            }
+        }
+
+        @keyframes drawTemple {
+            0%, 40% {
+                stroke-dashoffset: 40;
+            }
+            70% {
+                stroke-dashoffset: 0;
+            }
+            100% {
+                stroke-dashoffset: 40;
+            }
+        }
+
+        /* Loading Text */
+        .loading-text {
+            position: absolute;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #0f766e;
+            font-size: 1.2rem;
+            font-weight: 600;
+            text-align: center;
+            min-width: 200px;
+        }
+
+        .loading-dots {
+            display: inline-block;
+            width: 20px;
+        }
+
+        .loading-dots::after {
+            content: '';
+            animation: dots 1.5s infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: ''; }
+            40% { content: '.'; }
+            60% { content: '..'; }
+            80%, 100% { content: '...'; }
+        }
+
+        /* Original About Page Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            min-height: 100vh;
+            color: #1e293b;
+            line-height: 1.6;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 1rem 2rem;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 1px solid #e2e8f0;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #0f766e;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo::before {
+            content: "👁";
+            font-size: 1.5rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            color: #475569;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            background: #f1f5f9;
+            color: #0f766e;
+            transform: translateY(-1px);
+        }
+
+        .nav-links a.active {
+            background: linear-gradient(135deg, #0f766e, #0891b2);
+            color: white;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 6rem 2rem 2rem;
+        }
+
+        .hero-section {
+            text-align: center;
+            margin-bottom: 6rem;
+            padding: 3rem 0;
+        }
+
+        .hero-section h1 {
+            font-size: 3.5rem;
+            color: #0f172a;
+            margin-bottom: 1.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #0f766e, #0891b2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-section .subtitle {
+            font-size: 1.4rem;
+            color: #64748b;
+            max-width: 700px;
+            margin: 0 auto 2rem;
+        }
+
+        .mission-section {
+            background: white;
+            border-radius: 20px;
+            padding: 4rem;
+            margin-bottom: 4rem;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .mission-section h2 {
+            font-size: 2.5rem;
+            color: #0f172a;
+            margin-bottom: 2rem;
+            font-weight: 700;
+        }
+
+        .mission-text {
+            font-size: 1.2rem;
+            color: #475569;
+            line-height: 1.8;
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+        }
+
+        .floating-glasses {
+            position: absolute;
+            right: -150px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 400px;
+            height: 400px;
+            opacity: 0.08;
+            pointer-events: none;
+            animation: rotateFloat 15s linear infinite;
+            z-index: 1;
+        }
+
+        .floating-glasses::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 300px;
+            height: 120px;
+            border: 8px solid #0f766e;
+            border-radius: 60px 60px 60px 60px;
+            background: linear-gradient(45deg, rgba(15, 118, 110, 0.1), rgba(8, 145, 178, 0.1));
+        }
+        
+
+        .floating-glasses::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 8px;
+            background: #0f766e;
+            border-radius: 4px;
+            z-index: 3;
+        }
+
+        .floating-glasses .lens-left,
+        .floating-glasses .lens-right {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 120px;
+            height: 120px;
+            border: 8px solid #0f766e;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(15, 118, 110, 0.05) 0%, rgba(8, 145, 178, 0.05) 100%);
+        }
+
+        .floating-glasses .lens-left {
+            left: 20px;
+        }
+
+        .floating-glasses .lens-right {
+            right: 20px;
+        }
+
+        @keyframes rotateFloat {
+            0% {
+                transform: translateY(-50%) rotate(0deg);
+            }
+            25% {
+                transform: translateY(-60%) rotate(90deg);
+            }
+            50% {
+                transform: translateY(-50%) rotate(180deg);
+            }
+            75% {
+                transform: translateY(-40%) rotate(270deg);
+            }
+            100% {
+                transform: translateY(-50%) rotate(360deg);
+            }
+        }
+
+        .story-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+            margin-bottom: 6rem;
+        }
+
+        .story-content h2 {
+            font-size: 2.5rem;
+            color: #0f172a;
+            margin-bottom: 2rem;
+            font-weight: 700;
+        }
+
+        .story-content p {
+            font-size: 1.1rem;
+            color: #475569;
+            line-height: 1.8;
+            margin-bottom: 1.5rem;
+        }
+
+        .story-visual {
+            background: linear-gradient(135deg, #0f766e, #0891b2);
+            border-radius: 20px;
+            padding: 3rem;
+            color: white;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .story-visual::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: pulse 4s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.3; }
+            50% { transform: scale(1.1); opacity: 0.1; }
+        }
+
+        .story-visual-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .story-visual h3 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+
+        .story-visual p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .values-section {
+            margin-bottom: 6rem;
+        }
+
+        .values-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .values-header h2 {
+            font-size: 2.5rem;
+            color: #0f172a;
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+
+        .values-header p {
+            font-size: 1.2rem;
+            color: #64748b;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .values-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .value-card {
+            background: white;
+            border-radius: 16px;
+            padding: 3rem;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .value-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
+        }
+
+        .value-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #0f766e, #0891b2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            font-size: 2rem;
+        }
+
+        .value-card h3 {
+            color: #0f172a;
+            margin-bottom: 1rem;
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+
+        .value-card p {
+            color: #64748b;
+            line-height: 1.7;
+        }
+
+        .team-section {
+            background: white;
+            border-radius: 20px;
+            padding: 4rem;
+            margin-bottom: 4rem;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .team-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .team-header h2 {
+            font-size: 2.5rem;
+            color: #0f172a;
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+
+        .team-header p {
+            font-size: 1.2rem;
+            color: #64748b;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+
+        .team-member {
+            text-align: center;
+            padding: 2rem;
+            border-radius: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .team-member:hover {
+            background: #f8fafc;
+            transform: translateY(-4px);
+        }
+
+        .team-avatar {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, #0f766e, #0891b2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            font-size: 3rem;
+            color: white;
+        }
+
+        .team-member h4 {
+            color: #0f172a;
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .team-member .role {
+            color: #0f766e;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .team-member p {
+            color: #64748b;
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+        .innovation-section {
+            background: linear-gradient(135deg, #0f766e, #0891b2);
+            color: white;
+            padding: 4rem 2rem;
+            margin: 4rem -2rem;
+            border-radius: 20px;
+            text-align: center;
+        }
+
+        .innovation-section h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+        }
+
+        .innovation-section p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 800px;
+            margin: 0 auto 3rem;
+            line-height: 1.8;
+        }
+
+        .innovation-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 3rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .stat-item h3 {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-item p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .cta-section {
+            text-align: center;
+            padding: 4rem 0;
+        }
+
+        .cta-section h2 {
+            font-size: 2.5rem;
+            color: #0f172a;
+            margin-bottom: 2rem;
+            font-weight: 700;
+        }
+
+        .cta-section p {
+            font-size: 1.2rem;
+            color: #64748b;
+            margin-bottom: 3rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #0f766e, #0891b2);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            box-shadow: 0 4px 6px -1px rgba(15, 118, 110, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px -8px rgba(15, 118, 110, 0.5);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #0f766e;
+            border: 2px solid #0f766e;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-secondary:hover {
+            background: #0f766e;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 768px) {
+            .hero-section h1 {
+                font-size: 2.5rem;
+            }
+            
+            .nav-links {
+                display: none;
+            }
+            
+            .container {
+                padding: 5rem 1rem 1rem;
+            }
+            
+            .mission-section,
+            .team-section {
+                padding: 2rem;
+            }
+            
+            .floating-glasses {
+                right: -200px;
+                width: 300px;
+                height: 300px;
+                opacity: 0.05;
+            }
+            
+            .floating-glasses::before {
+                width: 200px;
+                height: 80px;
+                border-width: 6px;
+            }
+            
+            .floating-glasses .lens-left,
+            .floating-glasses .lens-right {
+                width: 80px;
+                height: 80px;
+                border-width: 6px;
+            }
+            
+            .story-section {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+            
+            .innovation-section {
+                margin: 4rem -1rem;
+                padding: 3rem 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay hidden" id="loadingOverlay">
+        <div class="glasses-loader">
+            <svg class="glasses-frame" viewBox="0 0 120 60">
+                <!-- Left Lens -->
+                <circle class="lens-left" cx="25" cy="30" r="18"/>
+                <!-- Right Lens -->
+                <circle class="lens-right" cx="95" cy="30" r="18"/>
+                <!-- Bridge -->
+                <line class="bridge" x1="43" y1="30" x2="77" y2="30"/>
+                <!-- Left Temple -->
+                <line class="temple-left" x1="7" y1="30" x2="0" y2="25"/>
+                <!-- Right Temple -->
+                <line class="temple-right" x1="113" y1="30" x2="120" y2="25"/>
+            </svg>
+            <div class="loading-text">
+                Loading VisionAR<span class="loading-dots"></span>
+            </div>
+        </div>
+    </div>
+
+    <nav class="navbar">
+        <div class="nav-content">
+            <div class="logo">VisionAR</div>
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="try-on.html">Virtual Try-On</a>
+                <a href="glasses.html">Shop Now</a>
+                <a href="about.html" class="active">About</a>
+                <a href="contact.html">Contact</a>
+
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="hero-section">
+            <h1>About VisionAR</h1>
+            <p class="subtitle">Pioneering the future of eye care through innovative AR technology and professional excellence</p>
+        </div>
+
+        <div class="mission-section">
+            <div class="floating-glasses">
+                <div class="lens-left"></div>
+                <div class="lens-right"></div>
+            </div>
+            <h2>Our Mission</h2>
+            <p class="mission-text">
+                To revolutionize eye care accessibility by combining cutting-edge augmented reality technology 
+                with professional optometric standards, ensuring everyone has access to precise, convenient, 
+                and affordable eyewear solutions that enhance their vision and quality of life.
+            </p>
+        </div>
+
+        <div class="story-section">
+            <div class="story-content">
+                <h2>Our Story</h2>
+                <p>
+                    VisionAR was founded in 2021 by a team of optometrists, technology innovators, and healthcare professionals 
+                    who recognized the critical gap between traditional eye care services and the growing need for accessible, 
+                    accurate vision solutions.
+                </p>
+                <p>
+                    Frustrated by the limitations of conventional fitting methods and the barriers many people face in accessing 
+                    quality eye care, our founders set out to create a technology that could deliver professional-grade results 
+                    from anywhere in the world.
+                </p>
+                <p>
+                    Today, we're proud to serve over 15,000 customers through our network of 250+ partner clinics, 
+                    maintaining the highest standards of accuracy and patient satisfaction in the industry.
+                </p>
+            </div>
+            <div class="story-visual">
+                <div class="story-visual-content">
+                    <h3>2021 - 2025</h3>
+                    <p>From innovative startup to industry leader, transforming how people access eye care worldwide</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="values-section">
+            <div class="values-header">
+                <h2>Our Core Values</h2>
+                <p>The principles that guide every decision we make and every innovation we pursue</p>
+            </div>
+            <div class="values-grid">
+                <div class="value-card">
+                    <div class="value-icon">🎯</div>
+                    <h3>Precision First</h3>
+                    <p>We maintain medical-grade accuracy standards in all our technologies, ensuring every measurement meets or exceeds professional optometric requirements.</p>
+                </div>
+                <div class="value-card">
+                    <div class="value-icon">🤝</div>
+                    <h3>Patient-Centered</h3>
+                    <p>Every feature we develop is designed with the patient experience in mind, prioritizing comfort, convenience, and confidence in the fitting process.</p>
+                </div>
+                <div class="value-card">
+                    <div class="value-icon">🔬</div>
+                    <h3>Innovation</h3>
+                    <p>We continuously push the boundaries of what's possible in AR technology, investing heavily in research and development to stay ahead of industry needs.</p>
+                </div>
+                <div class="value-card">
+                    <div class="value-icon">🛡️</div>
+                    <h3>Trust & Safety</h3>
+                    <p>We prioritize data security, privacy protection, and clinical validation to ensure our users can trust us with their most sensitive health information.</p>
+                </div>
+                <div class="value-card">
+                    <div class="value-icon">🌍</div>
+                    <h3>Accessibility</h3>
+                    <p>We believe quality eye care should be accessible to everyone, regardless of location, mobility, or economic circumstances.</p>
+                </div>
+                <div class="value-card">
+                    <div class="value-icon">⚡</div>
+                    <h3>Excellence</h3>
+                    <p>We maintain the highest standards in everything we do, from technology development to customer service and professional partnerships.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="team-section">
+            <div class="team-header">
+                <h2>Leadership Team</h2>
+                <p>Meet the experts driving innovation in eye care technology</p>
+            </div>
+            <div class="team-grid">
+                <div class="team-member">
+                    <div class="team-avatar">👨‍⚕️</div>
+                    <h4>Dr. Michael Chen</h4>
+                    <div class="role">CEO & Chief Medical Officer</div>
+                    <p>Board-certified optometrist with 15+ years of clinical experience and a passion for healthcare innovation. Previously led digital transformation initiatives at major medical centers.</p>
+                </div>
+                <div class="team-member">
+                    <div class="team-avatar">👩‍💻</div>
+                    <h4>Sarah Rodriguez</h4>
+                    <div class="role">CTO & AR Development Lead</div>
+                    <p>Former lead engineer at major tech companies with expertise in computer vision and AR technologies. Holds multiple patents in facial recognition and measurement systems.</p>
+                </div>
+                <div class="team-member">
+                    <div class="team-avatar">👨‍💼</div>
+                    <h4>James Park</h4>
+                    <div class="role">VP of Clinical Operations</div>
+                    <p>Licensed optician with deep industry expertise in eyewear manufacturing and quality control. Manages our network of partner clinics and ensures clinical standards.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="innovation-section">
+            <h2>Innovation by the Numbers</h2>
+            <p>Our commitment to advancing eye care technology is reflected in our continuous investment in research, development, and clinical validation.</p>
+            <div class="innovation-stats">
+                <div class="stat-item">
+                    <h3>50+</h3>
+                    <p>Patents Filed</p>
+                </div>
+                <div class="stat-item">
+                    <h3>$12M</h3>
+                    <p>R&D Investment</p>
+                </div>
+                <div class="stat-item">
+                    <h3>25+</h3>
+                    <p>Clinical Studies</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="cta-section">
+            <h2>Experience the Future of Eye Care</h2>
+            <p>Join thousands of satisfied customers who have discovered the convenience and accuracy of VisionAR technology.</p>
+            <div class="cta-buttons">
+                <a href="try-on.html" class="btn-primary">Try Virtual Fitting</a>
+                <a href="glasses.html" class="btn-secondary">View Our Collection</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Main loading system
+        function showLoader() {
+            const overlay = document.getElementById('loadingOverlay');
+            overlay.style.display = 'flex';
+            setTimeout(() => {
+                overlay.classList.remove('hidden');
+            }, 10);
+        }
+
+        function hideLoader() {
+            const overlay = document.getElementById('loadingOverlay');
+            overlay.classList.add('hidden');
+            setTimeout(() => {
+                overlay.style.display = 'none';
+            }, 500);
+        }
+
+        // Add loading animation to all navigation links
+        document.querySelectorAll('.nav-links a, .cta-buttons a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                // Only trigger for actual navigation (not the current page)
+                if (this.getAttribute('href') && !this.classList.contains('active')) {
+                    e.preventDefault();
+                    showLoader();
+                    
+                    // Simulate page loading (in a real site, this would be the actual page load)
+                    setTimeout(() => {
+                        
+                        
+                        // Hide loader after content is "loaded"
+                        setTimeout(hideLoader, 500);
+                    }, 1500);
+                }
+            });
+        });
+
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('.nav-links a, .cta-buttons a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                const href = this.getAttribute('href');
+                
+                // Only show loading for actual navigation (not current page or anchors)
+                if (href && href !== '#' && !this.classList.contains('active')) {
+                    // Show loading animation
+                    showLoader();
+                    
+                    // Allow normal navigation to proceed after short delay
+                    setTimeout(() => {
+                        window.location.href = href;
+                    }, 1500);
+                }
+            });
+        });
+
+        // Add scroll animation to cards
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        // Observe all cards for animation
+        document.querySelectorAll('.value-card, .team-member').forEach(card => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            card.style.transition = 'all 0.6s ease-out';
+            observer.observe(card);
+        });
+    </script>
+</body>
+</html>
